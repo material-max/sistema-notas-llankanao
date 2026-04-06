@@ -134,6 +134,12 @@ tr:hover td{background:var(--gris)}
   .page{display:block!important}
   #page-informes{display:block!important}
 }
+/* ===== MODAL ===== */
+#modal-overlay.show{display:flex}
+.btn-edit{padding:4px 10px;font-size:12px;border-radius:6px;cursor:pointer;border:1.5px solid var(--gris2);background:#fff;color:var(--texto);margin-right:4px}
+.btn-edit:hover{background:var(--gris)}
+.btn-del{padding:4px 10px;font-size:12px;border-radius:6px;cursor:pointer;border:1.5px solid var(--rojo);background:#fff;color:var(--rojo)}
+.btn-del:hover{background:var(--rojo-light)}
 </style>
 </head>
 <body>
@@ -157,6 +163,7 @@ tr:hover td{background:var(--gris)}
     <button class="nav-btn active" onclick="showPage('notas')"><span class="ico">✏️</span> Ingresar notas</button>
     <button class="nav-btn" onclick="showPage('consulta')"><span class="ico">🔍</span> Consultar</button>
     <button class="nav-btn" onclick="showPage('informes')"><span class="ico">📄</span> Informes</button>
+    <button class="nav-btn" onclick="showPage('admin')"><span class="ico">⚙️</span> Administración</button>
   </div>
 
   <!-- ===================== PÁGINA: INGRESO ===================== -->
@@ -301,7 +308,109 @@ tr:hover td{background:var(--gris)}
     </div>
   </div>
 
+  <!-- ===================== PÁGINA: ADMINISTRACIÓN ===================== -->
+  <div id="page-admin" class="page">
+
+    <!-- Selector de curso -->
+    <div class="card">
+      <div class="card-title">Gestión de alumnos</div>
+      <div class="form-grid">
+        <div>
+          <label>Curso</label>
+          <select id="admin-curso" onchange="onAdminCursoChange()">
+            <option value="">— Seleccione un curso —</option>
+            <option>1° Básico</option><option>2° Básico</option><option>3° Básico</option>
+            <option>4° Básico</option><option>5° Básico</option><option>6° Básico</option>
+            <option>7° Básico</option><option>8° Básico</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agregar alumno nuevo -->
+    <div class="card" id="admin-form-card" style="display:none">
+      <div class="card-title">Agregar alumno nuevo</div>
+      <div class="form-grid">
+        <div>
+          <label>Nombre completo (en mayúsculas)</label>
+          <input type="text" id="nuevo-nombre" placeholder="APELLIDO1 APELLIDO2 NOMBRE1 NOMBRE2" style="text-transform:uppercase">
+        </div>
+        <div>
+          <label>RUT</label>
+          <input type="text" id="nuevo-rut" placeholder="12345678-9">
+        </div>
+        <div>
+          <label>N° de lista</label>
+          <input type="text" id="nuevo-numero" placeholder="Asignado automáticamente">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="agregarAlumno()"><span>➕</span> Agregar alumno</button>
+        <div class="loading" id="loading-admin-add"><div class="spin"></div> Guardando...</div>
+        <div class="msg msg-ok" id="msg-admin-ok">✓ Alumno agregado correctamente</div>
+        <div class="msg msg-err" id="msg-admin-err">✗ Error al guardar. Intente nuevamente.</div>
+      </div>
+    </div>
+
+    <!-- Lista actual del curso -->
+    <div id="admin-lista-card" style="display:none">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+          <span class="card-title" style="margin-bottom:0">Lista actual del curso</span>
+          <span id="admin-total" style="font-size:13px;color:var(--texto2)"></span>
+        </div>
+        <div class="loading" id="loading-admin"><div class="spin"></div> Cargando lista...</div>
+        <div class="table-wrap">
+          <table id="admin-tabla" style="display:none">
+            <thead>
+              <tr>
+                <th style="width:44px">N°</th>
+                <th>Nombre del alumno</th>
+                <th style="width:120px">RUT</th>
+                <th style="width:90px">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="admin-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Placeholder -->
+    <div id="admin-placeholder">
+      <div class="no-data"><div class="icon">⚙️</div>Seleccione un curso para gestionar sus alumnos</div>
+    </div>
+
+  </div>
+
 </div><!-- /app -->
+
+<!-- MODAL EDITAR ALUMNO -->
+<div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:var(--radio-lg);padding:1.5rem;width:90%;max-width:460px;box-shadow:0 8px 32px rgba(0,0,0,0.18)">
+    <h3 style="font-size:15px;font-weight:600;margin-bottom:1.25rem;color:var(--texto)">Editar alumno</h3>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:1.25rem">
+      <div>
+        <label>Nombre completo</label>
+        <input type="text" id="edit-nombre" style="text-transform:uppercase">
+      </div>
+      <div>
+        <label>RUT</label>
+        <input type="text" id="edit-rut">
+      </div>
+      <div>
+        <label>N° de lista</label>
+        <input type="text" id="edit-numero">
+      </div>
+      <input type="hidden" id="edit-nombre-original">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarEdicion()">Guardar cambios</button>
+    </div>
+    <div class="loading" id="loading-edit" style="margin-top:10px"><div class="spin"></div> Guardando...</div>
+  </div>
+</div>
 
 <script>
 // ============================================================
@@ -857,6 +966,172 @@ async function generarInformeCurso(curso) {
       ${firmas()}
     </div>`;
 }
+
+// ============================================================
+//  ADMINISTRACIÓN DE ALUMNOS
+// ============================================================
+async function onAdminCursoChange() {
+  const curso = document.getElementById('admin-curso').value;
+  document.getElementById('admin-placeholder').style.display = 'none';
+  document.getElementById('admin-form-card').style.display   = 'none';
+  document.getElementById('admin-lista-card').style.display  = 'none';
+
+  if (!curso) {
+    document.getElementById('admin-placeholder').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('admin-form-card').style.display  = 'block';
+  document.getElementById('admin-lista-card').style.display = 'block';
+  document.getElementById('loading-admin').classList.add('show');
+  document.getElementById('admin-tabla').style.display = 'none';
+
+  // Limpiar caché para forzar recarga fresca
+  delete ALUMNOS_CACHE[curso];
+  try {
+    const r = await api({ accion: 'getAlumnos', curso });
+    if (r.ok) {
+      ALUMNOS_CACHE[curso] = r.alumnos;
+      renderAdminTabla(curso);
+      // Sugerir siguiente número de lista
+      const siguiente = r.alumnos.length + 1;
+      document.getElementById('nuevo-numero').value = siguiente;
+    }
+  } catch(e) { setConexion(false); }
+
+  document.getElementById('loading-admin').classList.remove('show');
+  document.getElementById('admin-tabla').style.display = 'table';
+  document.getElementById('nuevo-nombre').value = '';
+  document.getElementById('nuevo-rut').value    = '';
+  ocultarMensajesAdmin();
+}
+
+function renderAdminTabla(curso) {
+  const alumnos = ALUMNOS_CACHE[curso] || [];
+  document.getElementById('admin-total').textContent = alumnos.length + ' alumno(s)';
+  let rows = '';
+  alumnos.forEach(al => {
+    rows += `<tr>
+      <td class="num">${al.numero}</td>
+      <td>${al.nombre}</td>
+      <td style="font-size:12px;color:var(--texto2)">${al.rut||'—'}</td>
+      <td>
+        <button class="btn-edit" onclick="abrirModalEditar('${curso}','${al.nombre.replace(/'/g,"\\'")}')">Editar</button>
+        <button class="btn-del"  onclick="eliminarAlumno('${curso}','${al.nombre.replace(/'/g,"\\'")}')">Quitar</button>
+      </td>
+    </tr>`;
+  });
+  document.getElementById('admin-tbody').innerHTML = rows || '<tr><td colspan="4" style="text-align:center;color:var(--texto2);padding:1rem">Sin alumnos en este curso</td></tr>';
+}
+
+async function agregarAlumno() {
+  const curso   = document.getElementById('admin-curso').value;
+  const nombre  = document.getElementById('nuevo-nombre').value.trim().toUpperCase();
+  const rut     = document.getElementById('nuevo-rut').value.trim();
+  const numero  = parseInt(document.getElementById('nuevo-numero').value) || ((ALUMNOS_CACHE[curso]||[]).length + 1);
+
+  if (!curso)   { alert('Seleccione un curso.'); return; }
+  if (!nombre)  { alert('Ingrese el nombre del alumno.'); return; }
+
+  document.getElementById('loading-admin-add').classList.add('show');
+  ocultarMensajesAdmin();
+
+  try {
+    const r = await api({ accion: 'agregarAlumno', curso, nombre, rut, numero });
+    document.getElementById('loading-admin-add').classList.remove('show');
+    if (r.ok) {
+      document.getElementById('msg-admin-ok').classList.add('show');
+      setTimeout(() => document.getElementById('msg-admin-ok').classList.remove('show'), 3500);
+      document.getElementById('nuevo-nombre').value = '';
+      document.getElementById('nuevo-rut').value    = '';
+      // Refrescar lista
+      delete ALUMNOS_CACHE[curso];
+      const ra = await api({ accion: 'getAlumnos', curso });
+      if (ra.ok) {
+        ALUMNOS_CACHE[curso] = ra.alumnos;
+        renderAdminTabla(curso);
+        document.getElementById('nuevo-numero').value = ra.alumnos.length + 1;
+      }
+    } else {
+      document.getElementById('msg-admin-err').classList.add('show');
+    }
+  } catch(e) {
+    document.getElementById('loading-admin-add').classList.remove('show');
+    document.getElementById('msg-admin-err').classList.add('show');
+    setConexion(false);
+  }
+}
+
+function abrirModalEditar(curso, nombre) {
+  const alumnos = ALUMNOS_CACHE[curso] || [];
+  const al      = alumnos.find(a => a.nombre === nombre);
+  if (!al) return;
+  document.getElementById('edit-nombre').value           = al.nombre;
+  document.getElementById('edit-rut').value              = al.rut || '';
+  document.getElementById('edit-numero').value           = al.numero;
+  document.getElementById('edit-nombre-original').value  = al.nombre;
+  document.getElementById('modal-overlay').classList.add('show');
+  document.getElementById('modal-overlay').style.display = 'flex';
+  document.getElementById('loading-edit').classList.remove('show');
+}
+
+function cerrarModal() {
+  document.getElementById('modal-overlay').style.display = 'none';
+}
+
+async function guardarEdicion() {
+  const curso           = document.getElementById('admin-curso').value;
+  const nombreOriginal  = document.getElementById('edit-nombre-original').value;
+  const nombreNuevo     = document.getElementById('edit-nombre').value.trim().toUpperCase();
+  const rut             = document.getElementById('edit-rut').value.trim();
+  const numero          = parseInt(document.getElementById('edit-numero').value);
+
+  if (!nombreNuevo) { alert('El nombre no puede estar vacío.'); return; }
+
+  document.getElementById('loading-edit').classList.add('show');
+
+  try {
+    const r = await api({ accion: 'editarAlumno', curso, nombreOriginal, nombreNuevo, rut, numero });
+    document.getElementById('loading-edit').classList.remove('show');
+    if (r.ok) {
+      cerrarModal();
+      delete ALUMNOS_CACHE[curso];
+      const ra = await api({ accion: 'getAlumnos', curso });
+      if (ra.ok) { ALUMNOS_CACHE[curso] = ra.alumnos; renderAdminTabla(curso); }
+    } else {
+      alert('Error al guardar: ' + (r.error || 'desconocido'));
+    }
+  } catch(e) {
+    document.getElementById('loading-edit').classList.remove('show');
+    alert('Error de conexión.');
+    setConexion(false);
+  }
+}
+
+async function eliminarAlumno(curso, nombre) {
+  if (!confirm(`¿Quitar a "${nombre}" del curso ${curso}?\n\nNota: Sus notas guardadas no se eliminarán.`)) return;
+
+  try {
+    const r = await api({ accion: 'eliminarAlumno', curso, nombre });
+    if (r.ok) {
+      delete ALUMNOS_CACHE[curso];
+      const ra = await api({ accion: 'getAlumnos', curso });
+      if (ra.ok) { ALUMNOS_CACHE[curso] = ra.alumnos; renderAdminTabla(curso); }
+    } else {
+      alert('Error al eliminar: ' + (r.error || 'desconocido'));
+    }
+  } catch(e) { setConexion(false); }
+}
+
+function ocultarMensajesAdmin() {
+  document.getElementById('msg-admin-ok').classList.remove('show');
+  document.getElementById('msg-admin-err').classList.remove('show');
+}
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModal();
+});
 </script>
 </body>
 </html>
