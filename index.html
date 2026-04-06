@@ -450,20 +450,14 @@ function setConexion(online) {
 
 // ============================================================
 //  API HELPER
+//  Apps Script no acepta POST con CORS desde GitHub Pages.
+//  Todo via GET con payload JSON codificado en base64.
 // ============================================================
 async function api(data) {
-  const url = API_URL + '?' + new URLSearchParams({ accion: data.accion, ...data }).toString();
-  // Para acciones de escritura usamos POST
-  if (data.accion === 'guardarNotas') {
-    const r = await fetch(API_URL, {
-      method: 'POST',
-      body: JSON.stringify(data),
-      headers: { 'Content-Type': 'application/json' },
-      redirect: 'follow'
-    });
-    return r.json();
-  }
+  const payload = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+  const url = API_URL + '?payload=' + encodeURIComponent(payload);
   const r = await fetch(url, { redirect: 'follow' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
   return r.json();
 }
 
