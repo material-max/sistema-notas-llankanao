@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Notas — Escuela Llankanao</title>
+<style>
+/* ===== RESET & BASE ===== */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --verde:#1D9E75;--verde-dark:#0F6E56;--verde-light:#E1F5EE;
+  --rojo:#E24B4A;--rojo-light:#FCEBEB;
+  --amarillo:#EF9F27;--amarillo-light:#FAEEDA;
+  --gris:#f5f5f3;--gris2:#e8e8e5;--gris3:#888;
+  --texto:#1a1a1a;--texto2:#555;
+  --borde:rgba(0,0,0,0.1);
+  --radio:10px;--radio-lg:14px;
+  --sombra:0 2px 8px rgba(0,0,0,0.08);
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f0f0ed;color:var(--texto);font-size:15px;min-height:100vh}
+
+/* ===== LAYOUT ===== */
+.app{max-width:1000px;margin:0 auto;padding:1rem}
+@media(max-width:600px){.app{padding:.5rem}}
+
+/* ===== HEADER ===== */
+.header{background:#fff;border-radius:var(--radio-lg);padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;gap:14px;box-shadow:var(--sombra)}
+.logo{width:48px;height:48px;border-radius:50%;background:var(--verde);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;color:#fff;flex-shrink:0}
+.header-text h1{font-size:16px;font-weight:600;color:var(--texto)}
+.header-text p{font-size:12px;color:var(--texto2);margin-top:2px}
+.conexion{margin-left:auto;font-size:12px;display:flex;align-items:center;gap:5px;flex-shrink:0}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--gris3)}
+.dot.online{background:var(--verde)}
+.dot.offline{background:var(--rojo)}
+
+/* ===== NAV ===== */
+.nav{display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap}
+.nav-btn{padding:9px 18px;border:1.5px solid var(--gris2);border-radius:var(--radio);background:#fff;color:var(--texto2);font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+.nav-btn .ico{font-size:16px}
+.nav-btn.active{background:var(--verde);color:#fff;border-color:var(--verde)}
+.nav-btn:hover:not(.active){background:var(--gris);border-color:var(--gris3)}
+
+/* ===== CARDS ===== */
+.card{background:#fff;border-radius:var(--radio-lg);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--sombra)}
+.card-title{font-size:12px;font-weight:600;color:var(--texto2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:1rem}
+
+/* ===== FORM ELEMENTS ===== */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:1rem}
+label{font-size:13px;font-weight:500;color:var(--texto2);display:block;margin-bottom:5px}
+select,input[type=text]{width:100%;padding:10px 12px;border:1.5px solid var(--gris2);border-radius:var(--radio);font-size:14px;background:#fff;color:var(--texto);transition:border-color .15s}
+select:focus,input:focus{outline:none;border-color:var(--verde);box-shadow:0 0 0 3px rgba(29,158,117,.1)}
+.hint{font-size:12px;color:var(--texto2);margin-top:6px;background:var(--gris);padding:6px 10px;border-radius:6px;display:inline-block}
+
+/* ===== SEMESTRE TABS ===== */
+.sem-tabs{display:flex;gap:6px;margin-top:5px}
+.sem-tab{padding:8px 16px;border-radius:var(--radio);font-size:13px;font-weight:500;cursor:pointer;border:1.5px solid var(--gris2);color:var(--texto2);background:#fff;transition:all .15s}
+.sem-tab.active{background:var(--verde);color:#fff;border-color:var(--verde)}
+
+/* ===== BOTONES ===== */
+.btn{padding:9px 20px;border-radius:var(--radio);font-size:14px;font-weight:500;cursor:pointer;border:1.5px solid;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--verde);color:#fff;border-color:var(--verde)}
+.btn-primary:hover{background:var(--verde-dark)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{background:#fff;color:var(--texto);border-color:var(--gris2)}
+.btn-secondary:hover{background:var(--gris)}
+.btn-danger{background:#fff;color:var(--rojo);border-color:var(--rojo)}
+.btn-danger:hover{background:var(--rojo-light)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:1rem}
+
+/* ===== TABLA DE NOTAS ===== */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--gris);font-weight:600;font-size:11px;color:var(--texto2);text-transform:uppercase;letter-spacing:.04em;padding:9px 8px;text-align:left;border-bottom:1.5px solid var(--gris2);white-space:nowrap}
+td{padding:7px 8px;border-bottom:1px solid var(--gris);color:var(--texto);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--gris)}
+.nota-input{width:52px;padding:5px 4px;text-align:center;border:1.5px solid var(--gris2);border-radius:6px;font-size:13px;background:#fff;color:var(--texto);transition:border-color .15s}
+.nota-input:focus{outline:none;border-color:var(--verde);box-shadow:0 0 0 2px rgba(29,158,117,.15)}
+.nota-input.invalida{border-color:var(--rojo);background:var(--rojo-light)}
+.num{font-size:12px;color:var(--gris3);text-align:center}
+.prom-cell{font-weight:600;font-size:13px;text-align:center}
+.prom-ok{color:var(--verde)}
+.prom-med{color:var(--amarillo)}
+.prom-mal{color:var(--rojo)}
+
+/* ===== STATS ===== */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:1rem}
+.stat{background:var(--gris);border-radius:var(--radio);padding:.75rem 1rem}
+.stat .val{font-size:22px;font-weight:700;color:var(--texto)}
+.stat .lbl{font-size:11px;color:var(--texto2);margin-top:2px}
+
+/* ===== BADGES ===== */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-ok{background:#EAF3DE;color:#3B6D11}
+.badge-med{background:var(--amarillo-light);color:#854F0B}
+.badge-mal{background:var(--rojo-light);color:#A32D2D}
+
+/* ===== MENSAJES ===== */
+.msg{font-size:13px;padding:8px 14px;border-radius:var(--radio);display:none;align-items:center;gap:6px}
+.msg.show{display:flex}
+.msg-ok{background:var(--verde-light);color:var(--verde-dark)}
+.msg-err{background:var(--rojo-light);color:#A32D2D}
+.loading{display:none;align-items:center;gap:8px;font-size:13px;color:var(--texto2)}
+.loading.show{display:flex}
+.spin{width:16px;height:16px;border:2px solid var(--gris2);border-top-color:var(--verde);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== NO DATA ===== */
+.no-data{text-align:center;padding:2.5rem 1rem;color:var(--texto2);font-size:14px}
+.no-data .icon{font-size:36px;margin-bottom:.5rem;opacity:.4}
+
+/* ===== PAGES ===== */
+.page{display:none}
+.page.active{display:block}
+
+/* ===== INFORME ===== */
+.informe-box{background:#fff;border:1px solid var(--gris2);border-radius:var(--radio-lg);padding:1.5rem}
+.inf-header{text-align:center;margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:1px solid var(--gris2)}
+.inf-header h2{font-size:15px;font-weight:700;margin:6px 0 4px}
+.inf-header p{font-size:12px;color:var(--texto2)}
+.inf-table{width:100%;border-collapse:collapse;font-size:12px}
+.inf-table th,.inf-table td{border:1px solid var(--gris2);padding:6px 8px}
+.inf-table th{background:var(--gris);font-weight:600}
+.firmas{margin-top:2.5rem;display:grid;grid-template-columns:1fr 1fr;gap:2rem;font-size:12px}
+.firma{text-align:center}
+.firma-linea{border-top:1px solid var(--texto2);padding-top:5px;margin-top:2rem;font-weight:600}
+
+/* ===== PRINT ===== */
+@media print{
+  body{background:#fff;font-size:11px}
+  .header,.nav,.actions,.card-title,.sem-tabs,.no-print{display:none!important}
+  .informe-box{border:none;padding:0;box-shadow:none}
+  .inf-table th,.inf-table td{padding:4px 6px;font-size:10px}
+  .page{display:block!important}
+  #page-informes{display:block!important}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">EL</div>
+    <div class="header-text">
+      <h1>Escuela Llankanao M.F.M.S</h1>
+      <p>Sistema de registro de notas 2026</p>
+    </div>
+    <div class="conexion">
+      <span class="dot" id="dot-conexion"></span>
+      <span id="txt-conexion">Conectando...</span>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div class="nav no-print">
+    <button class="nav-btn active" onclick="showPage('notas')"><span class="ico">✏️</span> Ingresar notas</button>
+    <button class="nav-btn" onclick="showPage('consulta')"><span class="ico">🔍</span> Consultar</button>
+    <button class="nav-btn" onclick="showPage('informes')"><span class="ico">📄</span> Informes</button>
+  </div>
+
+  <!-- ===================== PÁGINA: INGRESO ===================== -->
+  <div id="page-notas" class="page active">
+    <div class="card">
+      <div class="card-title">Selección de curso y asignatura</div>
+      <div class="form-grid">
+        <div>
+          <label>Curso</label>
+          <select id="sel-curso" onchange="onCursoChange()">
+            <option value="">— Seleccione un curso —</option>
+            <option>1° Básico</option><option>2° Básico</option><option>3° Básico</option>
+            <option>4° Básico</option><option>5° Básico</option><option>6° Básico</option>
+            <option>7° Básico</option><option>8° Básico</option>
+          </select>
+        </div>
+        <div>
+          <label>Asignatura</label>
+          <select id="sel-asig" onchange="onAsigChange()">
+            <option value="">— Seleccione una asignatura —</option>
+            <option>Lenguaje y Comunicación</option>
+            <option>Matemática</option>
+            <option>Historia, Geografía y Ciencias Sociales</option>
+            <option>Ciencias Naturales</option>
+            <option>Idioma Extranjero: Inglés</option>
+            <option>Tecnología</option>
+            <option>Artes Visuales</option>
+            <option>Educación Física y Salud</option>
+            <option>Música</option>
+            <option>Religión</option>
+          </select>
+        </div>
+        <div>
+          <label>Semestre</label>
+          <div class="sem-tabs">
+            <button class="sem-tab active" id="sem1-btn" onclick="setSemestre(1)">1° Semestre</button>
+            <button class="sem-tab" id="sem2-btn" onclick="setSemestre(2)">2° Semestre</button>
+          </div>
+        </div>
+      </div>
+      <span class="hint">Ingrese las notas sin punto: <strong>45</strong> = 4.5 · <strong>63</strong> = 6.3 · <strong>70</strong> = 7.0</span>
+    </div>
+
+    <div id="notas-panel" style="display:none">
+      <div class="card">
+        <div class="stats" id="stats-row"></div>
+        <div class="actions">
+          <button class="btn btn-primary" id="btn-guardar" onclick="guardarNotas()" disabled>
+            <span>💾</span> Guardar notas
+          </button>
+          <button class="btn btn-secondary" onclick="limpiarNotas()">Limpiar</button>
+          <div class="loading" id="loading-notas"><div class="spin"></div> Guardando...</div>
+          <div class="msg msg-ok" id="msg-ok">✓ Notas guardadas correctamente</div>
+          <div class="msg msg-err" id="msg-err">✗ Error al guardar. Intente nuevamente.</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:36px">N°</th>
+                <th>Nombre del alumno</th>
+                <th>Nota 1</th><th>Nota 2</th><th>Nota 3</th><th>Nota 4</th>
+                <th>Nota 5</th><th>Nota 6</th><th>Nota 7</th><th>Nota 8</th>
+                <th>Promedio</th>
+              </tr>
+            </thead>
+            <tbody id="notas-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div id="notas-placeholder">
+      <div class="no-data">
+        <div class="icon">📋</div>
+        Seleccione un curso y asignatura para comenzar a ingresar notas
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== PÁGINA: CONSULTA ===================== -->
+  <div id="page-consulta" class="page">
+    <div class="card">
+      <div class="card-title">Buscar alumno</div>
+      <div class="form-grid">
+        <div>
+          <label>Curso</label>
+          <select id="cons-curso" onchange="onConsCursoChange()">
+            <option value="">— Seleccione —</option>
+            <option>1° Básico</option><option>2° Básico</option><option>3° Básico</option>
+            <option>4° Básico</option><option>5° Básico</option><option>6° Básico</option>
+            <option>7° Básico</option><option>8° Básico</option>
+          </select>
+        </div>
+        <div>
+          <label>Alumno</label>
+          <select id="cons-alumno" onchange="renderConsulta()">
+            <option value="">— Seleccione —</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div id="consulta-result">
+      <div class="no-data"><div class="icon">🔍</div>Seleccione un curso y alumno</div>
+    </div>
+  </div>
+
+  <!-- ===================== PÁGINA: INFORMES ===================== -->
+  <div id="page-informes" class="page">
+    <div class="card no-print">
+      <div class="card-title">Generar informe</div>
+      <div class="form-grid">
+        <div>
+          <label>Tipo de informe</label>
+          <select id="inf-tipo" onchange="onInfTipoChange()">
+            <option value="alumno">Alumno individual</option>
+            <option value="curso">Curso completo</option>
+          </select>
+        </div>
+        <div>
+          <label>Curso</label>
+          <select id="inf-curso" onchange="onInfCursoChange()">
+            <option value="">— Seleccione —</option>
+            <option>1° Básico</option><option>2° Básico</option><option>3° Básico</option>
+            <option>4° Básico</option><option>5° Básico</option><option>6° Básico</option>
+            <option>7° Básico</option><option>8° Básico</option>
+          </select>
+        </div>
+        <div id="inf-alumno-wrap">
+          <label>Alumno</label>
+          <select id="inf-alumno"><option value="">— Seleccione —</option></select>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-primary" onclick="generarInforme()"><span>👁</span> Ver informe</button>
+        <button class="btn btn-secondary" onclick="window.print()"><span>🖨</span> Imprimir / PDF</button>
+        <div class="loading" id="loading-inf"><div class="spin"></div> Cargando datos...</div>
+      </div>
+    </div>
+    <div id="informe-result">
+      <div class="no-data"><div class="icon">📄</div>Seleccione opciones y presione "Ver informe"</div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ============================================================
+//  CONFIGURACIÓN — reemplaza con la URL de tu Apps Script
+// ============================================================
+const API_URL = "https://script.google.com/macros/s/AKfycbzCMbendVHbQDmK8aQhS2f42AwPkr45CnHKySffe3qGeEJeJSTlLGdMZ-ScEAoEzGr0/exec";
+
+// ============================================================
+//  DATOS EN MEMORIA (caché local para rapidez)
+// ============================================================
+let ALUMNOS_CACHE = {};
+let NOTAS_CACHE   = {};
+let CONFIG        = {};
+let curSemestre   = 1;
+let notasModificadas = false;
+
+// ============================================================
+//  INICIALIZACIÓN
+// ============================================================
+window.addEventListener('load', async () => {
+  try {
+    const r = await api({ accion: 'getConfig' });
+    if (r.ok) {
+      CONFIG = r.config;
+      document.querySelector('.header-text h1').textContent = CONFIG.nombreColegio || 'Escuela Llankanao';
+      setConexion(true);
+    }
+  } catch(e) {
+    setConexion(false);
+  }
+});
+
+function setConexion(online) {
+  document.getElementById('dot-conexion').className = 'dot ' + (online ? 'online' : 'offline');
+  document.getElementById('txt-conexion').textContent = online ? 'Conectado' : 'Sin conexión';
+}
+
+// ============================================================
+//  API HELPER
+// ============================================================
+async function api(data) {
+  const url = API_URL + '?' + new URLSearchParams({ accion: data.accion, ...data }).toString();
+  // Para acciones de escritura usamos POST
+  if (data.accion === 'guardarNotas') {
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { 'Content-Type': 'application/json' },
+      redirect: 'follow'
+    });
+    return r.json();
+  }
+  const r = await fetch(url, { redirect: 'follow' });
+  return r.json();
+}
+
+// ============================================================
+//  HELPERS DE NOTAS
+// ============================================================
+function parseNota(raw) {
+  const s = String(raw).trim().replace(',', '.');
+  if (!s) return null;
+  let n;
+  if (s.includes('.')) { n = parseFloat(s); }
+  else if (s.length === 1) { n = parseFloat(s); }
+  else if (s.length === 2) { n = parseFloat(s[0] + '.' + s[1]); }
+  else { n = parseFloat(s); }
+  if (isNaN(n)) return null;
+  return Math.min(7, Math.max(1, n));
+}
+
+function showNota(n) { return n !== null ? n.toFixed(1) : ''; }
+
+function calcProm(vals) {
+  const v = vals.filter(x => x !== null && x !== undefined && x !== '');
+  if (!v.length) return null;
+  return v.reduce((a, b) => a + b, 0) / v.length;
+}
+
+function promFinal(p) { return p !== null ? Math.round(p * 10) / 10 : null; }
+
+function promClass(p) {
+  if (p === null) return '';
+  if (p < 4) return 'prom-mal';
+  if (p < 5.5) return 'prom-med';
+  return 'prom-ok';
+}
+
+function badge(p) {
+  if (p === null) return '';
+  if (p < 4)   return '<span class="badge badge-mal">Insuficiente</span>';
+  if (p < 5.5) return '<span class="badge badge-med">Regular</span>';
+  return '<span class="badge badge-ok">Aprobado</span>';
+}
+
+function keyCache(c, a, s) { return c + '||' + a + '||' + s; }
+
+// ============================================================
+//  NAVEGACIÓN
+// ============================================================
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x => x.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    if (b.getAttribute('onclick') === "showPage('" + p + "')") b.classList.add('active');
+  });
+}
+
+function setSemestre(s) {
+  curSemestre = s;
+  document.getElementById('sem1-btn').classList.toggle('active', s === 1);
+  document.getElementById('sem2-btn').classList.toggle('active', s === 2);
+  onAsigChange();
+}
+
+// ============================================================
+//  INGRESO DE NOTAS
+// ============================================================
+function onCursoChange() {
+  document.getElementById('sel-asig').value = '';
+  document.getElementById('notas-panel').style.display = 'none';
+  document.getElementById('notas-placeholder').style.display = 'block';
+}
+
+async function onAsigChange() {
+  const curso = document.getElementById('sel-curso').value;
+  const asig  = document.getElementById('sel-asig').value;
+  if (!curso || !asig) {
+    document.getElementById('notas-panel').style.display = 'none';
+    document.getElementById('notas-placeholder').style.display = 'block';
+    return;
+  }
+  await cargarYRenderTabla(curso, asig, curSemestre);
+}
+
+async function cargarYRenderTabla(curso, asig, sem) {
+  document.getElementById('notas-panel').style.display = 'none';
+  document.getElementById('notas-placeholder').innerHTML =
+    '<div class="no-data"><div class="spin" style="width:28px;height:28px;margin:0 auto 8px;border-width:3px"></div>Cargando alumnos y notas...</div>';
+  document.getElementById('notas-placeholder').style.display = 'block';
+
+  try {
+    // Cargar alumnos si no están en caché
+    if (!ALUMNOS_CACHE[curso]) {
+      const ra = await api({ accion: 'getAlumnos', curso });
+      if (ra.ok) ALUMNOS_CACHE[curso] = ra.alumnos;
+    }
+
+    // Cargar notas si no están en caché
+    const k = keyCache(curso, asig, sem);
+    if (!NOTAS_CACHE[k]) {
+      const rn = await api({ accion: 'getNotas', curso, asignatura: asig, semestre: sem });
+      if (rn.ok) NOTAS_CACHE[k] = rn.notas;
+    }
+
+    renderTabla(curso, asig, sem);
+    setConexion(true);
+  } catch(e) {
+    setConexion(false);
+    document.getElementById('notas-placeholder').innerHTML =
+      '<div class="no-data"><div class="icon">⚠️</div>Sin conexión. Verifique su internet.</div>';
+  }
+}
+
+function renderTabla(curso, asig, sem) {
+  const alumnos = ALUMNOS_CACHE[curso] || [];
+  const k       = keyCache(curso, asig, sem);
+  const data    = NOTAS_CACHE[k] || {};
+
+  let rows = '';
+  alumnos.forEach((al, i) => {
+    const vals = data[al.nombre] || Array(8).fill(null);
+    let inputs = '';
+    for (let n = 0; n < 8; n++) {
+      const v = vals[n];
+      const disp = v !== null ? showNota(v) : '';
+      inputs += `<td><input type="text" class="nota-input" maxlength="3" value="${disp}"
+        data-nombre="${al.nombre}" data-n="${n}" data-k="${k}"
+        onblur="onNotaBlur(this)" oninput="onNotaInput(this)"
+        placeholder="—" inputmode="numeric"></td>`;
+    }
+    const p = calcProm(vals.filter(x => x !== null));
+    const pc = promClass(p);
+    rows += `<tr>
+      <td class="num">${al.numero}</td>
+      <td>${al.nombre}</td>
+      ${inputs}
+      <td class="prom-cell ${pc}" id="prom_${i}">${p !== null ? p.toFixed(1) : '—'}</td>
+    </tr>`;
+  });
+
+  document.getElementById('notas-tbody').innerHTML = rows;
+  document.getElementById('notas-placeholder').style.display = 'none';
+  document.getElementById('notas-panel').style.display = 'block';
+  document.getElementById('btn-guardar').disabled = false;
+  notasModificadas = false;
+  updateStats(curso, asig, sem);
+  hideMensajes();
+}
+
+function onNotaInput(el) {
+  notasModificadas = true;
+  el.classList.remove('invalida');
+}
+
+function onNotaBlur(el) {
+  const raw    = el.value.trim();
+  const parsed = parseNota(raw);
+  const k      = el.dataset.k;
+  const nombre = el.dataset.nombre;
+  const n      = parseInt(el.dataset.n);
+
+  el.classList.toggle('invalida', raw !== '' && parsed === null);
+
+  if (!NOTAS_CACHE[k]) NOTAS_CACHE[k] = {};
+  if (!NOTAS_CACHE[k][nombre]) NOTAS_CACHE[k][nombre] = Array(8).fill(null);
+  NOTAS_CACHE[k][nombre][n] = parsed;
+
+  if (parsed !== null) el.value = showNota(parsed);
+  else if (raw === '') el.value = '';
+
+  // Actualizar promedio de la fila
+  const vals = NOTAS_CACHE[k][nombre];
+  const p    = calcProm(vals.filter(x => x !== null));
+  const parts = k.split('||');
+  const alumnos = ALUMNOS_CACHE[parts[0]] || [];
+  const idx  = alumnos.findIndex(a => a.nombre === nombre);
+  const promEl = document.getElementById('prom_' + idx);
+  if (promEl) {
+    promEl.textContent  = p !== null ? p.toFixed(1) : '—';
+    promEl.className    = 'prom-cell ' + promClass(p);
+  }
+  updateStats(parts[0], parts[1], parts[2]);
+}
+
+function updateStats(curso, asig, sem) {
+  const k       = keyCache(curso, asig, sem);
+  const alumnos = ALUMNOS_CACHE[curso] || [];
+  const data    = NOTAS_CACHE[k] || {};
+  let promedios = [];
+  alumnos.forEach(al => {
+    const p = calcProm((data[al.nombre] || []).filter(x => x !== null));
+    if (p !== null) promedios.push(p);
+  });
+  const aprob   = promedios.filter(p => p >= 4).length;
+  const promG   = promedios.length ? promedios.reduce((a,b)=>a+b,0)/promedios.length : null;
+  document.getElementById('stats-row').innerHTML =
+    stat(alumnos.length, 'Alumnos en el curso') +
+    stat(promedios.length, 'Con notas ingresadas') +
+    stat(aprob, 'Aprobados') +
+    `<div class="stat"><div class="val" style="color:${promG&&promG>=4?'var(--verde)':'var(--rojo)'}">${promG!==null?promG.toFixed(1):'—'}</div><div class="lbl">Promedio general</div></div>`;
+}
+
+function stat(v, l) { return `<div class="stat"><div class="val">${v}</div><div class="lbl">${l}</div></div>`; }
+
+async function guardarNotas() {
+  const curso = document.getElementById('sel-curso').value;
+  const asig  = document.getElementById('sel-asig').value;
+  if (!curso || !asig) return;
+
+  const k     = keyCache(curso, asig, curSemestre);
+  const notas = NOTAS_CACHE[k] || {};
+
+  document.getElementById('loading-notas').classList.add('show');
+  document.getElementById('btn-guardar').disabled = true;
+  hideMensajes();
+
+  try {
+    const r = await api({ accion: 'guardarNotas', curso, asignatura: asig, semestre: curSemestre, notas });
+    document.getElementById('loading-notas').classList.remove('show');
+    if (r.ok) {
+      document.getElementById('msg-ok').classList.add('show');
+      notasModificadas = false;
+      setTimeout(() => document.getElementById('msg-ok').classList.remove('show'), 4000);
+    } else {
+      document.getElementById('msg-err').classList.add('show');
+    }
+  } catch(e) {
+    document.getElementById('loading-notas').classList.remove('show');
+    document.getElementById('msg-err').classList.add('show');
+    setConexion(false);
+  }
+  document.getElementById('btn-guardar').disabled = false;
+}
+
+function limpiarNotas() {
+  const curso = document.getElementById('sel-curso').value;
+  const asig  = document.getElementById('sel-asig').value;
+  if (!curso || !asig) return;
+  if (!confirm('¿Limpiar todas las notas de esta pantalla? (Los datos guardados en el servidor NO se borran)')) return;
+  const k = keyCache(curso, asig, curSemestre);
+  NOTAS_CACHE[k] = {};
+  renderTabla(curso, asig, curSemestre);
+}
+
+function hideMensajes() {
+  document.getElementById('msg-ok').classList.remove('show');
+  document.getElementById('msg-err').classList.remove('show');
+}
+
+// ============================================================
+//  CONSULTA DE ALUMNO
+// ============================================================
+async function onConsCursoChange() {
+  const curso = document.getElementById('cons-curso').value;
+  const sel   = document.getElementById('cons-alumno');
+  sel.innerHTML = '<option value="">— Cargando... —</option>';
+  document.getElementById('consulta-result').innerHTML = '<div class="no-data"><div class="spin" style="width:24px;height:24px;margin:0 auto 8px;border-width:3px"></div>Cargando alumnos...</div>';
+
+  if (!curso) { sel.innerHTML = '<option value="">— Seleccione —</option>'; return; }
+
+  if (!ALUMNOS_CACHE[curso]) {
+    try {
+      const r = await api({ accion: 'getAlumnos', curso });
+      if (r.ok) ALUMNOS_CACHE[curso] = r.alumnos;
+    } catch(e) {}
+  }
+
+  sel.innerHTML = '<option value="">— Seleccione —</option>';
+  (ALUMNOS_CACHE[curso] || []).forEach(al => {
+    const o = document.createElement('option');
+    o.value = al.nombre; o.textContent = al.nombre;
+    sel.appendChild(o);
+  });
+  document.getElementById('consulta-result').innerHTML = '<div class="no-data"><div class="icon">🔍</div>Seleccione un alumno</div>';
+}
+
+async function renderConsulta() {
+  const curso = document.getElementById('cons-curso').value;
+  const al    = document.getElementById('cons-alumno').value;
+  if (!curso || !al) return;
+
+  document.getElementById('consulta-result').innerHTML = '<div class="no-data"><div class="spin" style="width:24px;height:24px;margin:0 auto 8px;border-width:3px"></div>Cargando notas...</div>';
+
+  const ASIGS = ["Lenguaje y Comunicación","Matemática","Historia, Geografía y Ciencias Sociales","Ciencias Naturales","Idioma Extranjero: Inglés","Tecnología","Artes Visuales","Educación Física y Salud","Música","Religión"];
+
+  // Cargar notas de todas las asignaturas y ambos semestres
+  for (const asig of ASIGS) {
+    for (const sem of [1,2]) {
+      const k = keyCache(curso, asig, sem);
+      if (!NOTAS_CACHE[k]) {
+        try {
+          const r = await api({ accion: 'getNotas', curso, asignatura: asig, semestre: sem });
+          if (r.ok) NOTAS_CACHE[k] = r.notas;
+        } catch(e) {}
+      }
+    }
+  }
+
+  let rows = '';
+  ASIGS.forEach(asig => {
+    const k1 = keyCache(curso, asig, 1);
+    const k2 = keyCache(curso, asig, 2);
+    const p1 = calcProm(((NOTAS_CACHE[k1]||{})[al]||[]).filter(x=>x!==null));
+    const p2 = calcProm(((NOTAS_CACHE[k2]||{})[al]||[]).filter(x=>x!==null));
+    let pf = null;
+    if (p1!==null && p2!==null) pf = promFinal((p1+p2)/2);
+    else if (p1!==null) pf = promFinal(p1);
+    else if (p2!==null) pf = promFinal(p2);
+    const esReligion = asig === 'Religión';
+    rows += `<tr>
+      <td>${asig}</td>
+      <td class="prom-cell ${promClass(p1)}" style="text-align:center">${p1!==null?p1.toFixed(1):'—'}</td>
+      <td class="prom-cell ${promClass(p2)}" style="text-align:center">${p2!==null?p2.toFixed(1):'—'}</td>
+      <td style="text-align:center;font-weight:600">${pf!==null?pf.toFixed(1):'—'}</td>
+      <td>${esReligion?(pf!==null?concepto(pf):'—'):(pf!==null?badge(pf):'')}</td>
+    </tr>`;
+  });
+
+  document.getElementById('consulta-result').innerHTML = `
+    <div class="card">
+      <div style="margin-bottom:1rem">
+        <strong style="font-size:15px">${al}</strong>
+        <span style="font-size:12px;color:var(--texto2);margin-left:10px">${curso} — Año 2026</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Asignatura</th><th style="text-align:center">1° Sem.</th><th style="text-align:center">2° Sem.</th><th style="text-align:center">Prom. final</th><th>Estado</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
+// Concepto solo para Religión
+function concepto(p) {
+  if (p >= 6.5) return '<span class="badge badge-ok">MB — Muy Bueno</span>';
+  if (p >= 5.5) return '<span class="badge badge-ok">B — Bueno</span>';
+  if (p >= 4.0) return '<span class="badge badge-med">S — Suficiente</span>';
+  return '<span class="badge badge-mal">I — Insuficiente</span>';
+}
+
+// ============================================================
+//  INFORMES
+// ============================================================
+function onInfTipoChange() {
+  document.getElementById('inf-alumno-wrap').style.display =
+    document.getElementById('inf-tipo').value === 'alumno' ? 'block' : 'none';
+}
+
+async function onInfCursoChange() {
+  const curso = document.getElementById('inf-curso').value;
+  const sel   = document.getElementById('inf-alumno');
+  sel.innerHTML = '<option value="">— Cargando... —</option>';
+
+  if (!curso) { sel.innerHTML = '<option value="">— Seleccione —</option>'; return; }
+
+  if (!ALUMNOS_CACHE[curso]) {
+    try {
+      const r = await api({ accion: 'getAlumnos', curso });
+      if (r.ok) ALUMNOS_CACHE[curso] = r.alumnos;
+    } catch(e) {}
+  }
+  sel.innerHTML = '<option value="">— Seleccione —</option>';
+  (ALUMNOS_CACHE[curso] || []).forEach(al => {
+    const o = document.createElement('option');
+    o.value = al.nombre; o.textContent = al.nombre;
+    sel.appendChild(o);
+  });
+  document.getElementById('informe-result').innerHTML =
+    '<div class="no-data"><div class="icon">📄</div>Seleccione las opciones y presione "Ver informe"</div>';
+}
+
+async function generarInforme() {
+  const tipo  = document.getElementById('inf-tipo').value;
+  const curso = document.getElementById('inf-curso').value;
+  if (!curso) { alert('Seleccione un curso.'); return; }
+  if (tipo === 'alumno') {
+    const al = document.getElementById('inf-alumno').value;
+    if (!al) { alert('Seleccione un alumno.'); return; }
+    await generarInformeAlumno(curso, al);
+  } else {
+    await generarInformeCurso(curso);
+  }
+}
+
+const ASIGS = ["Lenguaje y Comunicación","Matemática","Historia, Geografía y Ciencias Sociales","Ciencias Naturales","Idioma Extranjero: Inglés","Tecnología","Artes Visuales","Educación Física y Salud","Música","Religión"];
+
+async function precargarNotas(curso) {
+  document.getElementById('loading-inf').classList.add('show');
+  for (const asig of ASIGS) {
+    for (const sem of [1,2]) {
+      const k = keyCache(curso, asig, sem);
+      if (!NOTAS_CACHE[k]) {
+        try {
+          const r = await api({ accion:'getNotas', curso, asignatura:asig, semestre:sem });
+          if (r.ok) NOTAS_CACHE[k] = r.notas;
+        } catch(e) {}
+      }
+    }
+  }
+  document.getElementById('loading-inf').classList.remove('show');
+}
+
+function getPF(curso, asig, al) {
+  const k1 = keyCache(curso, asig, 1);
+  const k2 = keyCache(curso, asig, 2);
+  const p1 = calcProm(((NOTAS_CACHE[k1]||{})[al]||[]).filter(x=>x!==null));
+  const p2 = calcProm(((NOTAS_CACHE[k2]||{})[al]||[]).filter(x=>x!==null));
+  if (p1!==null && p2!==null) return { p1, p2, pf: promFinal((p1+p2)/2) };
+  if (p1!==null) return { p1, p2:null, pf: promFinal(p1) };
+  if (p2!==null) return { p1:null, p2, pf: promFinal(p2) };
+  return { p1:null, p2:null, pf:null };
+}
+
+function encabezadoInforme() {
+  return `<div class="inf-header">
+    <p style="font-size:11px;color:var(--texto2)">REPÚBLICA DE CHILE — MINISTERIO DE EDUCACIÓN</p>
+    <p style="font-size:11px;color:var(--texto2)">REGIÓN DEL MAULE — PROVINCIA DE LINARES — COMUNA DE LINARES</p>
+    <h2>${CONFIG.nombreColegio||'Escuela Llankanao M.F.M.S'}</h2>
+    <p>ROL BASE DATOS: ${CONFIG.rolBaseDatos||'3285-9'} — AÑO ESCOLAR ${CONFIG.anioEscolar||'2026'}</p>
+  </div>`;
+}
+
+function firmas() {
+  return `<div class="firmas">
+    <div class="firma"><div class="firma-linea">Director(a)<br>${CONFIG.director||'Sr. Paulo Quezada V.'}</div></div>
+    <div class="firma"><div class="firma-linea">Jefe U.T.P.<br>${CONFIG.jefUTP||'Sra. Gloria Barrera V.'}</div></div>
+  </div>`;
+}
+
+async function generarInformeAlumno(curso, al) {
+  await precargarNotas(curso);
+  let rows = '';
+  ASIGS.forEach(asig => {
+    const { p1, p2, pf } = getPF(curso, asig, al);
+    const esReligion = asig === 'Religión';
+    rows += `<tr>
+      <td>${asig}</td>
+      <td style="text-align:center">${p1!==null?p1.toFixed(1):'—'}</td>
+      <td style="text-align:center">${p2!==null?p2.toFixed(1):'—'}</td>
+      <td style="text-align:center;font-weight:600">${pf!==null?pf.toFixed(1):'—'}</td>
+      ${esReligion?`<td style="text-align:center">${pf!==null?concepto(pf):'—'}</td>`:''}
+    </tr>`;
+  });
+
+  document.getElementById('informe-result').innerHTML = `
+    <div class="informe-box">
+      ${encabezadoInforme()}
+      <table class="inf-table" style="margin-bottom:1.25rem">
+        <tr><td style="width:50%"><strong>Alumno:</strong> ${al}</td><td><strong>Curso:</strong> ${curso}</td></tr>
+      </table>
+      <table class="inf-table">
+        <thead><tr>
+          <th>Asignatura</th>
+          <th style="text-align:center;width:100px">Prom. 1° Sem.</th>
+          <th style="text-align:center;width:100px">Prom. 2° Sem.</th>
+          <th style="text-align:center;width:110px">Promedio Final</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      ${firmas()}
+    </div>`;
+}
+
+async function generarInformeCurso(curso) {
+  await precargarNotas(curso);
+  if (!ALUMNOS_CACHE[curso]) {
+    try { const r = await api({accion:'getAlumnos',curso}); if(r.ok) ALUMNOS_CACHE[curso]=r.alumnos; } catch(e){}
+  }
+  const alumnos = ALUMNOS_CACHE[curso] || [];
+  const asigAbrev = ["Leng.","Mat.","Hist.","C.Nat.","Inglés","Tec.","Artes","Ed.Fís.","Música","Religión"];
+  let rows = '';
+  alumnos.forEach((al, i) => {
+    let pfList = [];
+    let cells  = '';
+    ASIGS.forEach(asig => {
+      const { pf } = getPF(curso, asig, al.nombre);
+      if (pf !== null) pfList.push(pf);
+      cells += `<td style="text-align:center">${pf!==null?pf.toFixed(1):'—'}</td>`;
+    });
+    const promG = pfList.length ? promFinal(pfList.reduce((a,b)=>a+b,0)/pfList.length) : null;
+    rows += `<tr>
+      <td style="text-align:center">${al.numero}</td>
+      <td style="font-size:11px">${al.nombre}</td>
+      ${cells}
+      <td style="text-align:center;font-weight:700">${promG!==null?promG.toFixed(1):'—'}</td>
+    </tr>`;
+  });
+
+  const asigH = asigAbrev.map(a => `<th style="text-align:center;font-size:10px">${a}</th>`).join('');
+  document.getElementById('informe-result').innerHTML = `
+    <div class="informe-box">
+      ${encabezadoInforme()}
+      <p style="text-align:center;font-weight:600;margin-bottom:1rem">Informe de Notas — ${curso}</p>
+      <div class="table-wrap">
+        <table class="inf-table">
+          <thead><tr><th style="text-align:center">N°</th><th>Alumno</th>${asigH}<th style="text-align:center">Prom. Final</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      ${firmas()}
+    </div>`;
+}
+</script>
+</body>
+</html>
